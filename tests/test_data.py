@@ -76,8 +76,9 @@ for ds_name, fp in SPLIT_FILES:
         0 collisions). Collisions reappear only after the correlation filter
         removes columns -- rows that differed solely in a dropped column
         collapse onto each other. Driving this to zero would mean choosing the
-        dropped columns before the split, which is exactly the leak of
-        defect #1, so a small residual is the correct trade, not a bug.
+        dropped columns before the split, which would itself leak test data
+        into feature selection, so a small residual is the correct trade,
+        not a bug.
         """
         def keys(X):                       # exact values, no rounding
             return set(map(tuple, X.tolist()))
