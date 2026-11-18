@@ -9,15 +9,7 @@ datasets: **UNSW-NB15**, **Edge-IIoTSet**, and **X-IIoTID**.
 This repository accompanies the manuscript *"Fed-QCShield: A Federated
 Learning Framework for Quantum-enhanced IDS"*.
 
-## Headline result
-
-Under a leakage-free, class-weighted, 5-seed statistical comparison, the
-proposed quantum layer (QE-QCSL) does **not** demonstrate a detection-accuracy
-advantage over a parameter-matched classical CNN-BiLSTM control on any of the
-three datasets. This repository's contribution is the reproducible,
-leakage-free, federated evaluation framework itself -- not a claimed quantum
-accuracy edge. See the `paper_results_<timestamp>/` snapshot described below,
-and the manuscript's Table 3, for the full, unedited numbers.
+ 
 
 
 
