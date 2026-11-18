@@ -1,8 +1,8 @@
-"""quantikz emitter for the revised circuits (Phase 3).
+"""quantikz emitter for the QCShield circuits.
 
 The manuscript already loads the ``quantikz`` package, so the fragments written
-here drop straight into the ``.tex``.  Circuit figures in the submitted version
-were screenshots of ``qml.draw_mpl`` output at an inconsistent qubit count;
+here drop straight into the ``.tex``, replacing circuit diagrams that were
+previously screenshots of ``qml.draw_mpl`` output at an inconsistent qubit count;
 these are generated from the same tape that ``circuit_stats`` counts, so a
 figure and its table can no longer disagree.
 

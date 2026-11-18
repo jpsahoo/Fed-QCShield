@@ -1,31 +1,16 @@
-"""Federated harness — real Flower simulation on the paper's model (Phase 5).
+"""Federated harness -- Flower simulation of the paper's model.
 
-Ported from ``0003_FedQNN_KD_V6_5PM_Mar31-THESIS.ipynb`` cell 48.  The strategy
-configuration, ``NumPyClient`` structure and ``run_simulation`` call are kept as
-they were -- the manuscript claims a "Flower-based federated setup" and cites
-Beutel et al., so the code has to actually be one.  What changed is everything
-``DEFECTS.md`` #7 and #12 identified:
+Trains :class:`HybridQuantumCNNBiLSTM` (QE-QCSL, 4 qubits) under FedAvg,
+FedProx, FedTrimmedAvg, or FaultTolerantFedAvg, across IID or
+Dirichlet(0.5)-partitioned clients. Key correctness properties:
 
-* **The paper's model now runs.**  The notebook trained ``EnhancedHybridQNN`` --
-  CNN(32/64) + AngleEmbedding + BasicEntanglerLayers at **8 qubits, no BiLSTM**
-  -- while the manuscript describes "QAOA embedding and a bespoke QCShield
-  layer".  This runs :class:`HybridQuantumCNNBiLSTM` at QE-QCSL, 4 qubits.
-* **``NUM_ROUNDS = 10``**, matching the paper (the notebook used 20).
-* **IID and Dirichlet(0.5) only** -- the ``shard`` partitioner the paper never
-  reports is not offered.
-* **One global ``LabelEncoder``.**  The notebook fitted a separate encoder per
-  client, so under a non-IID split the same integer denoted different attack
-  classes on different clients and FedAvg averaged mismatched output layers.
-* **A genuine reserved test set.**  The notebook's server-side ``evaluate``
-  scored the global model on *client 0's* shard.  Section 658 of the manuscript
-  says "the aggregated global model was scrutinized using a reserved test
-  dataset" -- that is now true: only the training split is partitioned, and the
-  global test split is never given to any client.
-* **Categorical features survive** -- the notebook's ``ColumnTransformer``
-  declared only a numeric transformer and silently dropped ``proto``,
-  ``service`` and ``state`` through the default ``remainder="drop"``.
-* **``client_resources`` derived from a measurement** (~600 MB/client) instead
-  of the hard-coded ``num_gpus: 0.2`` that over-subscribed a 4 GB card.
+* One global ``LabelEncoder`` fit before partitioning, so the same integer
+  label denotes the same attack class on every client regardless of split.
+* A genuine reserved test set: only the training split is partitioned across
+  clients, and the global test split is never given to any client, so
+  server-side evaluation reflects true held-out generalization.
+* ``client_resources`` sized from a measured per-client VRAM footprint
+  rather than a fixed guess, to avoid over-subscribing the GPU.
 
 Clients run inside Ray actors, which are separate processes, so partitions are
 exchanged through an on-disk cache rather than module globals.
@@ -58,8 +43,8 @@ LOCAL_EPOCHS = 1
 PARTITIONS = ("iid", "dirichlet")
 STRATEGIES = ("FedAvg", "FedProx", "FedTrimmedAvg", "FaultTolerantFedAvg")
 
-#: Measured peak VRAM for one client, from the Phase 0/4 runs (UNSW-NB15,
-#: Edge-IIoTSet). X-IIoTID's larger feature count (50 vs. 32/38) and class
+#: Measured peak VRAM for one client (UNSW-NB15, Edge-IIoTSet). X-IIoTID's
+#: larger feature count (50 vs. 32/38) and class
 #: count measured substantially higher per-client VRAM in practice, so it
 #: gets its own measured estimate rather than inheriting this one and
 #: under-provisioning Ray's per-client GPU share.

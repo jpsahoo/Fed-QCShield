@@ -1,30 +1,16 @@
 """Correct circuit statistics.
 
-Replaces ``CircuitAnalyzer.analyze_operations`` (mega-cell lines 1275-1326),
-which is the root cause of Reviewer 3 §4 / Reviewer 4 §2 -- Table 3 reporting
-AE-QCSL as 3 ops / depth 1 / **0** two-qubit gates while Table 8 lists 6 CNOTs
-for the very same configuration.
+Real circuit depth comes from the tape's DAG, not a per-wire operation
+counter -- a naive ``current_depth[max(op.wires)] += 1`` undercounts, since a
+gate on wires (0, 3) would only advance wire 3's counter even though it
+serializes with anything already on wire 0. Likewise, "two-qubit gate count"
+must check wire count precisely (``Toffoli``/``CSWAP`` are 3-wire gates, not
+2-wire), or three-qubit gates get silently lumped in with CNOTs.
 
-Three separate bugs produced that:
-
-1. **Silent exception swallowing.**  The original ran the circuit inside
-   ``with qml.tape.QuantumTape() as tape:`` and, on *any* exception, logged a
-   warning and built a ``fallback_tape`` -- then rebound ``tape = fallback_tape``
-   *inside* the still-open outer context.  Because ``QCSchieldLayer`` crashed at
-   3 qubits (defect #5), the numbers reported were from a half-built tape that
-   nobody noticed was wrong.
-2. **"Depth" was not a depth.**  It kept ``current_depth = [0] * n_qubits``
-   and incremented ``current_depth[max(op.wires)]`` -- a per-wire operation
-   counter keyed on the highest wire index.  A gate on wires (0,3) advanced
-   only wire 3's counter, so gates that genuinely serialise were counted as
-   parallel.  Real depth comes from the circuit DAG.
-3. **Every multi-wire gate counted as "two-qubit".**  ``if len(op.wires) > 1``
-   lumps ``Toffoli`` (3 wires) and ``CSWAP`` (3 wires) in with the CNOTs.
-
-This module derives everything from :func:`pennylane.specs` and the tape's DAG,
-raises on failure instead of falling back, and reports 1-/2-/3-qubit counts
-separately.  :func:`cross_check` asserts agreement with ``qml.specs`` so the
-tables can never silently drift apart again.
+This module derives everything from :func:`pennylane.specs` and the tape's
+DAG, raising on failure rather than falling back silently, and reports
+1-/2-/3-qubit counts separately. :func:`cross_check` asserts agreement with
+``qml.specs`` so the tables can't drift apart.
 """
 
 from __future__ import annotations

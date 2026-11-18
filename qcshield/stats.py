@@ -1,10 +1,8 @@
-"""Multi-seed aggregation and significance testing (Reviewer 4 §6).
+"""Multi-seed aggregation and significance testing.
 
-The original fixed ``random_state = 42`` everywhere and reported a single run
-per configuration, so nothing in the paper distinguished a real improvement from
-seed noise.  This module aggregates the per-seed result JSONs written by
-``cli.run`` into mean +/- std, and runs Wilcoxon signed-rank tests of the
-headline configuration against every baseline over the paired seeds.
+Aggregates the per-seed result JSONs written by ``cli.run`` into mean +/-
+std, and runs Wilcoxon signed-rank tests of the headline configuration
+against every baseline over the paired seeds.
 
 Wilcoxon is the right test here: the same seeds are used for every model, so the
 samples are paired, and with 5 seeds no normality assumption is defensible.

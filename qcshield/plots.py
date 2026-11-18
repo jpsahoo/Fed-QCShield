@@ -9,18 +9,16 @@ Note the manuscript is inconsistent about the dataset separator -- centralized
 figures use ``UNSW-NB15`` and federated ones ``UNSW_NB15``. Both spellings are
 reproduced exactly as they appear in the ``.tex``.
 
-**Dimensions and layout match the original code exactly**, confirmed
-2026-08-29 against the mega-cell source and the federated notebook (see
-:mod:`qcshield.style` for the citations): ``figsize=(32,12)``/``dpi=250`` for
+Dimensions and layout: ``figsize=(32,12)``/``dpi=250`` for
 ``learning_curves``/``evaluation_metrics`` (1x3 subplots each), ``dpi=300``/
 ``figsize=(20,6)`` for the federated client-vs-global panel (1x3: Accuracy,
 F1, Loss), and ``config["plot_size"]=(15,5)`` per subplot for the circuit
 gate-count bar charts. The confusion matrix uses ``cmap='tab10'`` directly
-with annotated raw counts, matching the original -- tab10's qualitative hues
-are fine here because the printed number, not color intensity, carries the
-value; every other plot uses tab10/tab20 as a qualitative palette, switching
-to tab20 automatically past 10 categories via :func:`qcshield.style.palette`
-(Edge-IIoTSet's 15 classes, the 12-model comparison chart).
+with annotated raw counts -- tab10's qualitative hues are fine here because
+the printed number, not color intensity, carries the value; every other plot
+uses tab10/tab20 as a qualitative palette, switching to tab20 automatically
+past 10 categories via :func:`qcshield.style.palette` (Edge-IIoTSet's 15
+classes, the 12-model comparison chart).
 
 **PDF text stays selectable** -- ``pdf.fonttype = 42`` embeds TrueType
 outlines instead of matplotlib's default Type 3 fonts, which several viewers
@@ -96,18 +94,12 @@ def learning_curves(history: dict, dataset: str, template: str,
                     fig_dir: Path = None, tag: str = FIGURE_TAG) -> Path:
     """``learning_curves_{dataset}_{template}[_{tag}].pdf`` -- 1x3, (32,12), dpi=250.
 
-    Restored EXACTLY to the Revision R1 appearance (2026-11-17), verified
-    against R1's own rendered PDFs (``learning_curves_Edge-IIoTSet_QE_QCSL``/
-    ``learning_curves_UNSW-NB15_QE_QCSL``, both tag ``20250721_124103``) and
-    against git history for the ``plots.py``/``style.py`` that produced them
-    (commit 3ecb730, the last one before this session's layout changes):
-    the template/dataset name lives in each panel's own title -- there is no
+    The template/dataset name lives in each panel's own title -- there is no
     separate suptitle -- and no box_aspect is pinned, so panels keep
     whatever shape (32,12)/tight_layout naturally gives them. Styled via
     :data:`style.LC_RCPARAMS`, a dedicated rc_context scoped to this
-    function only, so later changes to evaluation_metrics'/model_comparison's
-    shared TITLE_SIZE/LABEL_SIZE/GRID_ALPHA/... constants cannot pull this
-    plot away from R1 again.
+    function only, so changes to evaluation_metrics'/model_comparison's
+    shared TITLE_SIZE/LABEL_SIZE/GRID_ALPHA/... constants can't affect it.
     """
     style.apply_style()
     fig_dir = Path(fig_dir or FIGURE_DIR)
@@ -142,14 +134,12 @@ def evaluation_metrics(confusion: Sequence[Sequence[int]], per_class_f1: Sequenc
                        roc_curves: dict = None, pr_curves: dict = None) -> Path:
     """``evaluation_metrics_{dataset}_{template}[_{tag}].pdf`` -- 1x3, (32,12), dpi=250.
 
-    Faithful port of the reference ``Visualizer.plot_evaluation_metrics``
-    (2026-09-07): confusion matrix (raw counts, ``cmap='tab10'``, fixed
-    14pt annotations), per-class ROC and precision-recall with per-class
-    AUC/AP in the legend, micro/macro-average curves overlaid as dotted
-    lines. Same ``config["figure_size_large"]``/``config["dpi"]`` as
-    ``learning_curves``, equal 1x3 subplots, ``loc='best'`` legends,
-    ``tight_layout()`` -- no per-class-count dynamic sizing, matching the
-    reference exactly rather than an independently-derived scheme.
+    Confusion matrix (raw counts, ``cmap='tab10'``, fixed 14pt annotations),
+    per-class ROC and precision-recall with per-class AUC/AP in the legend,
+    micro/macro-average curves overlaid as dotted lines. Same
+    ``config["figure_size_large"]``/``config["dpi"]`` as ``learning_curves``,
+    equal 1x3 subplots, ``loc='best'`` legends, ``tight_layout()`` -- no
+    per-class-count dynamic sizing.
 
     Falls back to a confusion-matrix + per-class-F1 layout when
     ``roc_curves``/``pr_curves`` are not supplied (result JSONs written before
@@ -162,13 +152,10 @@ def evaluation_metrics(confusion: Sequence[Sequence[int]], per_class_f1: Sequenc
     cm = np.asarray(confusion, dtype=int)
     have_curves = roc_curves is not None and pr_curves is not None
 
-    # EVAL_FIGSIZE's width was widened (2026-11-16) so 3 equal-width square
-    # panels print at ~30% page-width each once embedded -- that only works
-    # because the panel squares are bound by *width*, not height, at this
-    # size, which needs a much bigger canvas than the point-sizes below were
-    # originally tuned against. fs rescales every explicit font/linewidth in
-    # this function so the PRINTED (post-embed) size is unchanged from
-    # before the widening; apply_eval_style()'s own rcParams-driven sizes
+    # EVAL_FIGSIZE is wide so 3 equal-width square panels print at ~30%
+    # page-width each once embedded; fs rescales every explicit font/linewidth
+    # in this function so the printed (post-embed) size stays correct at that
+    # canvas size. apply_eval_style()'s own rcParams-driven sizes
     # (axes.titlesize/labelsize/ticklabelsize/legend.fontsize/font.size/
     # lines.linewidth/axes.linewidth) are rescaled the same way via
     # rc_context so panel titles, axis labels, and ROC/PR tick numbers scale
@@ -190,12 +177,12 @@ def _evaluation_metrics_impl(cm, per_class_f1, class_names, dataset, template,
         1, 3, figsize=style.EVAL_FIGSIZE, dpi=style.EVAL_DPI,
         gridspec_kw={"width_ratios": [1, 1, 1]})   # equal slots: all three panels print at the same page-width share, confusion matrix included
     # The (model, dataset) context is added as a fig.text() near the end of
-    # this function, after tight_layout -- see learning_curves for why: a
-    # suptitle present when tight_layout runs makes it reserve a large fixed
-    # block above the axes regardless of the suptitle's own fontsize or any
-    # rect passed to it, and tight_layout leaves a layout engine attached
-    # that re-applies (and re-reserves that same block) at save time even if
-    # the suptitle is only added afterward, unless that engine is detached.
+    # this function, after tight_layout: a suptitle present when tight_layout
+    # runs makes it reserve a large fixed block above the axes regardless of
+    # the suptitle's own fontsize or any rect passed to it, and tight_layout
+    # leaves a layout engine attached that re-applies (and re-reserves that
+    # same block) at save time even if the suptitle is only added afterward,
+    # unless that engine is detached.
 
     # Cell-annotation and tick-label size scale down past 10 classes: at a
     # fixed panel width, n x n cells each get proportionally less room as n
@@ -203,10 +190,9 @@ def _evaluation_metrics_impl(cm, per_class_f1, class_names, dataset, template,
     # fully overlapped into an unreadable blur at Edge-IIoTSet's n=15.
     # Absolute pixel-space targets, not scaled relative to style.ANNOT_SIZE/
     # TICK_SIZE: this geometry (how much room an n x n confusion matrix has
-    # per cell/tick at EVAL_FIGSIZE) hasn't changed, but those two constants
-    # dropped substantially (19->15, 24->16) to match the reference's overall
-    # scheme -- a formula relative to them would now under-shoot the same
-    # visually-confirmed-legible absolute sizes this was tuned to produce.
+    # per cell/tick at EVAL_FIGSIZE) is independent of those two constants,
+    # so a formula relative to them would under-shoot the visually-confirmed
+    # legible absolute sizes this is tuned to produce.
     cm_annot_fs = (style.ANNOT_SIZE if n <= 10 else max(8, round(140 / n))) * fs
     cm_tick_fs = (style.TICK_SIZE if n <= 10 else max(9, round(160 / n))) * fs
 
@@ -275,13 +261,12 @@ def _evaluation_metrics_impl(cm, per_class_f1, class_names, dataset, template,
     ax3.grid(True, alpha=style.GRID_ALPHA)
     ax3.set_box_aspect(1.0)
 
-    # Legend placed ABOVE the panels now (between the suptitle and the panel
-    # titles), not below -- moved per request, since the old bottom
-    # placement needed its own dedicated margin on top of whatever the
-    # panels themselves needed, whereas the top margin already has to exist
-    # for the suptitle regardless, so folding the legend into it is more
-    # compact. ncol/legend_fs/n_rows need to be known *before* tight_layout
-    # this time, since they decide how much top rect to reserve.
+    # Legend placed above the panels (between the suptitle and the panel
+    # titles), not below: the top margin already has to exist for the
+    # suptitle regardless, so folding the legend into it is more compact
+    # than giving it its own dedicated bottom margin. ncol/legend_fs/n_rows
+    # need to be known before tight_layout runs, since they decide how much
+    # top rect to reserve.
     fig_h_pt = style.EVAL_FIGSIZE[1] * 72
     if legend_handles:
         # Spreads a 17-entry legend (Edge-IIoTSet's worst case) into few
@@ -292,14 +277,11 @@ def _evaluation_metrics_impl(cm, per_class_f1, class_names, dataset, template,
     else:
         ncol = legend_fs = n_rows = 0
 
-    # All in POINTS, not a bare figure-height fraction: a fraction tuned
-    # against one EVAL_FIGSIZE silently breaks the next time that figure
-    # height changes for an unrelated reason (confirmed: this happened once
-    # already, when EVAL_FIGSIZE[1] dropped from 8.5 to 7.0in and nobody
-    # re-checked a fraction-based margin tuned against the old height).
-    # Scaled by fs along with the text itself (fs>1 since 2026-11-16's
-    # width-driven canvas enlargement) so the vertical room reserved for the
-    # now-bigger suptitle/legend text grows with it instead of under-shooting.
+    # All in points, not a bare figure-height fraction: a fraction tuned
+    # against one EVAL_FIGSIZE would silently break if that figure height
+    # ever changes for an unrelated reason. Scaled by fs along with the text
+    # itself so the vertical room reserved for the suptitle/legend text
+    # grows with it instead of under-shooting.
     suptitle_pt = 30.0 * fs          # suptitle text + its own padding from the page's top edge
     gap_after_suptitle_pt = 20.0 * fs
     legend_block_pt = (20.0 + 21.0 * n_rows) * fs   # same per-row cost as the old bottom placement
@@ -338,20 +320,13 @@ def _evaluation_metrics_impl(cm, per_class_f1, class_names, dataset, template,
 def model_comparison(agg, dataset: str, fig_dir: Path = None,
                      tag: str = FIGURE_TAG) -> Path:
     """``model_comparison_{dataset}[_{tag}].pdf`` -- 3-panel grouped-bar layout
-    (accuracy / macro+weighted F1 / training time), matching the pre-revision
-    ``Visualizer.plot_model_comparison`` benchmarking style the user asked to
-    restore (2026-09-09): vertically-stacked subplots, grouped (non-stacked)
-    bars, value labels above each bar, tab10 colors.
+    (accuracy / macro+weighted F1 / training time): vertically-stacked
+    subplots, grouped (non-stacked) bars, value labels above each bar, tab10
+    colors.
 
-    Unlike that pre-revision code -- which plotted a single run's raw value
-    per template (``.iloc[0]``, no error bars) -- every bar here is the
-    5-seed mean with a std error bar, since that statistical rigor is what
-    Reviewer 4 (Sec. 6) required and what the manuscript's revised captions
-    already commit to; restoring the old *visual layout* does not mean
-    reverting to single-seed numbers. Models are ordered by descending
-    macro-F1 (same convention as the single-panel figure this replaces), so
-    the "who leads" comparison stays honest and consistent across panels
-    rather than reverting to the old code's arbitrary template order.
+    Every bar is the 5-seed mean with a std error bar, not a single run's raw
+    value. Models are ordered by descending macro-F1, so the "who leads"
+    comparison stays consistent across panels.
     """
     style.apply_eval_style()
     fig_dir = Path(fig_dir or FIGURE_DIR)
@@ -397,10 +372,9 @@ def model_comparison(agg, dataset: str, fig_dir: Path = None,
     acc_err = (df["accuracy_std"] * 100).fillna(0)
     bars = ax0.bar(x, acc, yerr=acc_err, color=colors[0], capsize=4, label="Test Accuracy (%)")
     top0 = _label_bars(ax0, bars, acc, acc_err)
-    # The ~1-line gap above the highest label the user asked for: headroom
-    # past the tallest bar+error+label stack so it clears the top spine
-    # instead of touching or crossing it, rather than leaving ylim at
-    # matplotlib's tight default around the data.
+    # Headroom past the tallest bar+error+label stack so the top label
+    # clears the top spine instead of touching or crossing it, rather than
+    # leaving ylim at matplotlib's tight default around the data.
     ax0.set_ylim(top=top0 * 1.12)
     ax0.set_ylabel("Accuracy (%)")
     ax0.set_title(f"Model comparison: Accuracy ({dataset})")
@@ -531,13 +505,10 @@ def operation_distribution_grid(stats_rows, dataset: str, fig_dir: Path = None,
     """``operation_distribution_grid_{dataset}.pdf`` -- one 2x4 grid of gate-type
     bar charts, all 8 configurations together (AE/QE x BEL/RL/SEL/QCSL).
 
-    Consolidates ``qcshield_distribution``/``qcshield_layer_distribution``
-    (previously two separate figures, 6+2 configs split by whether the layer is
-    QCSL) into the single-figure, 2x4 layout supplied by the user 2026-09-06,
-    for direct visual comparison of every configuration side by side. Gate
-    counts come from this project's verified ``circuit_stats`` (cross-checked
-    against ``pennylane.specs`` -- see ``tests/test_circuits.py``), not the
-    pre-revision analyser's numbers.
+    All 8 configurations in a single 2x4 layout for direct visual comparison
+    side by side. Gate counts come from this project's ``circuit_stats``
+    (cross-checked against ``pennylane.specs`` -- see
+    ``tests/test_circuits.py``).
     """
     style.apply_eval_style()
     fig_dir = Path(fig_dir or FIGURE_DIR)
@@ -549,12 +520,11 @@ def operation_distribution_grid(stats_rows, dataset: str, fig_dir: Path = None,
         missing = [k for k in order if k not in by_key]
         raise ValueError(f"missing circuit_stats rows for {missing}")
 
-    # Shrunk from the original (24,12): this figure is embedded at
-    # 0.79\textwidth (~5.9in) in the manuscript, same scale-down problem as
-    # learning_curves/evaluation_metrics -- a 24in-wide native canvas gives a
-    # 5.9/24=0.25x shrink factor, which crushed even _op_count_bars' already
-    # modest 14-18pt fonts down to under 5pt. (16,9) at 5.9/16=0.37x matches
-    # the scale factor used elsewhere in this module for the same reason.
+    # This figure is embedded at 0.79\textwidth (~5.9in) in the manuscript,
+    # same scale-down concern as learning_curves/evaluation_metrics -- too
+    # wide a native canvas crushes _op_count_bars' already modest 14-18pt
+    # fonts down to illegible sizes once shrunk to embed width. (16,9) keeps
+    # the same embed-width shrink factor used elsewhere in this module.
     fig, axes = plt.subplots(2, 4, figsize=(16, 9), dpi=style.EVAL_DPI)
     for ax, row in zip(axes.flat, rows):
         hatch = "//" if row.layer == "QCSL" else "\\\\"
@@ -565,10 +535,9 @@ def operation_distribution_grid(stats_rows, dataset: str, fig_dir: Path = None,
     fig.suptitle(f"Operation Distribution for {dataset} "
                 f"({rows[0].n_qubits} qubits, {rows[0].n_layers} layers, {level})",
                 fontsize=style.TITLE_SIZE)
-    # Extra vertical room between the two rows: the larger title/tick fonts
-    # (2026-09-09) made row 1's rotated x-tick labels collide with row 2's
-    # titles at the old spacing. Figure dimensions are unchanged; only the
-    # internal gap grows.
+    # Extra vertical room between the two rows so row 1's rotated x-tick
+    # labels don't collide with row 2's titles. Figure dimensions are
+    # unchanged; only the internal gap grows.
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.subplots_adjust(hspace=0.65)
     return _save(fig, fig_dir / f"operation_distribution_grid_{dataset}.pdf",
@@ -583,11 +552,9 @@ def client_global_metrics(result, fig_dir: Path = None) -> Path:
     """``client_global_metrics_{Strategy}_{partition}_{dataset}.pdf`` --
     1x3 (Accuracy, F1, Loss), figsize=(20,6), dpi=300.
 
-    Matches the federated notebook's ``plot_client_global_metrics`` exactly:
-    three metrics side by side (the original never had only two), each client
-    its own tab10 color, Global drawn with a star marker in the next tab10
-    color past the last client -- not a special neutral color, matching the
-    original's ``colors[num_clients]``.
+    Three metrics side by side, each client its own tab10 color, Global
+    drawn with a star marker in the next tab10 color past the last client
+    rather than a special neutral color.
     """
     style.apply_style()
     fig_dir = Path(fig_dir or (FIGURE_DIR / "Fed"))
@@ -630,11 +597,7 @@ def client_global_metrics(result, fig_dir: Path = None) -> Path:
 
 def roundwise_scores(results: Iterable, partition: str, dataset: str,
                      fig_dir: Path = None) -> Path:
-    """``roundwise_scores_{partition}_{dataset}.pdf`` -- all strategies overlaid, tab10.
-
-    The manuscript references this figure but the notebook had **no generator
-    for it at all** (defect #7); this is that missing plotter.
-    """
+    """``roundwise_scores_{partition}_{dataset}.pdf`` -- all strategies overlaid, tab10."""
     style.apply_style()
     fig_dir = Path(fig_dir or (FIGURE_DIR / "Fed"))
     ds = dataset.replace("-", "_")
@@ -654,13 +617,11 @@ def roundwise_scores(results: Iterable, partition: str, dataset: str,
             ax.set_xlabel("Federated round"); ax.set_ylabel(label)
     for ax in axes:
         ax.legend(fontsize=18)
-    # Title added as fig.text() AFTER tight_layout(), with the layout engine
-    # then detached -- see learning_curves for the full explanation. In
-    # short: tight_layout() leaves a layout engine attached that re-applies
-    # (and re-reserves a large, fixed block for any suptitle already
-    # present) at save time, which silently overrode this figure's y=0.98/
-    # rect=0.94 the same way it did for learning_curves and
-    # evaluation_metrics before those were fixed.
+    # Title added as fig.text() after tight_layout(), with the layout engine
+    # then detached -- tight_layout() leaves a layout engine attached that
+    # re-applies (and re-reserves a large, fixed block for any suptitle
+    # already present) at save time, which would otherwise override any
+    # rect passed here.
     # This plot has no per-panel title row (just axis labels), so its axes
     # naturally fill almost the whole figure (measured: axes top at
     # y~=0.97) -- unlike learning_curves/evaluation_metrics, an explicit

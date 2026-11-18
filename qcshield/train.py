@@ -1,18 +1,10 @@
 """Training and evaluation.
 
-Replaces ``Trainer`` from the mega-cells.  Differences that matter:
-
-* **Batches move to the device inside the loop.**  The original uploaded the
-  entire train and test matrices to the GPU in ``DataProcessor`` before training
-  started; on Edge-IIoTSet that is millions of rows resident in VRAM for the
-  whole run.
-* **A validation split exists.**  The original selected nothing on validation
-  and simply reported the final epoch; the best checkpoint is now chosen by
-  validation macro-F1 and restored before the test evaluation.
-* **Macro-F1 is reported alongside accuracy.**  Both datasets are heavily
-  imbalanced -- UNSW-NB15 is 53% ``Normal``, Edge-IIoTSet 71% ``Normal`` -- so
-  accuracy alone flatters every model. Reviewer 3 §1 asked for exactly this.
-* **Runs are deterministic** given a seed (Reviewer 4 §8).
+Batches move to the device inside the loop (not all at once), so even
+Edge-IIoTSet's millions of rows never sit resident in VRAM for a whole run.
+The best checkpoint is chosen by validation macro-F1 and restored before the
+test evaluation. Macro-F1 is reported alongside accuracy since all three
+datasets are class-imbalanced, and every run is deterministic given a seed.
 """
 
 from __future__ import annotations

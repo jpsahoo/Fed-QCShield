@@ -1,34 +1,18 @@
-"""Split-first data pipeline for Fed-QCShield.
+"""Split-first, leakage-free data pipeline for Fed-QCShield.
 
-This module replaces ``DataProcessor`` from the original notebooks and fixes
-Reviewer 4 §1 (data leakage) at its root.  The original order was::
-
-    load -> LabelEncoder.fit_transform(ALL) -> RobustScaler.fit_transform(ALL)
-         -> add Gaussian noise(ALL) -> X.corr()(ALL) -> drop -> train_test_split
-
-so every fitted statistic -- category vocabularies, medians, IQRs and the
-correlation matrix used to select features -- saw the test rows.  The order
-here is::
+Pipeline order, strictly enforced to avoid train/test leakage::
 
     load -> drop ID/leaky cols -> dedupe -> STRATIFIED split (train/val/test)
          -> fit encoders + scaler on TRAIN only -> transform val/test
          -> corr() on TRAIN only -> drop those columns from all three splits
 
-Also fixed here:
-
-* **Gaussian noise injection deleted entirely** (defect #2).  Nothing in this
-  module accepts ``add_noise`` or ``noise_std``; ``tests/test_no_noise.py``
-  greps the package to keep it that way.
-* **UNSW-NB15 is now stratified.**  The original stratified Edge-IIoTSet but
-  not UNSW-NB15, so UNSW's class balance differed between train and test.
-* **Unseen categorical levels no longer throw.**  ``LabelEncoder`` raises on any
-  category it did not see during ``fit``; because the original fitted on the
-  full frame this could never happen -- it is a bug that only appears once the
-  leak is fixed.  ``OrdinalEncoderWithUnseen`` maps unseen levels to a reserved
-  index instead.
-* **Tensors are no longer bulk-uploaded to the GPU.**  The original pushed the
-  entire train and test matrices onto the device in ``_get_*_data``; batches now
-  move per-iteration from pinned host memory.
+No Gaussian noise injection anywhere in this module; ``tests/test_no_noise.py``
+greps the package to keep it that way. ``OrdinalEncoderWithUnseen`` maps any
+categorical level unseen at fit time to a reserved index rather than raising,
+since fitting on the training split alone means val/test can contain levels
+the encoder never saw. Tensors move to the device per-batch from pinned host
+memory rather than being bulk-uploaded, so large datasets don't sit resident
+in VRAM for the whole run.
 """
 
 from __future__ import annotations
@@ -66,19 +50,18 @@ EDGE_DROP = [
     "icmp.transmit_timestamp", "http.request.uri.query", "tcp.options",
     "tcp.payload", "tcp.srcport", "tcp.dstport", "udp.port", "mqtt.msg",
 ]
-#: One-hot expanded in the original pipeline; kept as ordinal here to avoid the
-#: 63 -> ~1600 column blow-up that made ``.corr()`` intractable (defect #1).
+#: Kept as ordinal rather than one-hot to avoid a 63 -> ~1600 column blow-up
+#: that would make ``.corr()`` intractable.
 EDGE_CATEGORICAL = [
     "http.request.method", "http.referer", "http.request.version",
     "dns.qry.name.len", "mqtt.conack.flags", "mqtt.protoname", "mqtt.topic",
 ]
 
 #: X-IIoTID (Al-Hawawreh et al.) -- a modern, industrial-protocol-specific
-#: IIoT/APT benchmark, added for Revision 2 to answer Reviewer 4 Comment 4
-#: ("Dataset Obsolescence"). ``class2`` is the mid-granularity attack-category
-#: label used throughout this project's 10-class framing of the other two
-#: datasets; ``class1``/``class3`` are coarser/finer label views of the exact
-#: same attack and are therefore direct leaks of ``class2``, not features.
+#: IIoT/APT benchmark. ``class2`` is the mid-granularity attack-category label
+#: used throughout this project's 10-class framing of the other two datasets;
+#: ``class1``/``class3`` are coarser/finer views of the exact same attack and
+#: are therefore direct leaks of ``class2``, not features.
 XIIOTID_TARGET = "class2"
 XIIOTID_DROP = [
     "class1", "class3",                                   # other granularities of the same label -- leaks
@@ -169,11 +152,8 @@ def _load_unsw() -> Tuple[pd.DataFrame, str, List[str]]:
 
 #: Kaggle handle and the *real* in-archive path of the DNN CSV.
 #:
-#: ``dataset_download_hint.py:8`` passed ``""`` here, which cannot resolve a
-#: file inside the archive.  The obvious guess -- a bare
-#: ``"DNN-EdgeIIoT-dataset.csv"`` -- also 404s: the file is two directories
-#: down, and the folder names contain spaces.  Verified 2026-08-25 by reading
-#: the archive's central directory.
+#: A bare ``"DNN-EdgeIIoT-dataset.csv"`` 404s: the file is two directories
+#: down inside the archive, and the folder names contain spaces.
 EDGE_KAGGLE_HANDLE = "mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot"
 EDGE_IN_ARCHIVE = "Edge-IIoTset dataset/Selected dataset for ML and DL/DNN-EdgeIIoT-dataset.csv"
 
@@ -454,8 +434,8 @@ def make_loaders(splits: Splits, cfg: Config, shuffle_train: bool = True
 
 
 # --------------------------------------------------------------------------
-# Federated partitioners (Phase 5) -- fed from the SAME split-first pipeline,
-# so the leak is fixed once for both centralized and federated experiments.
+# Federated partitioners -- fed from the SAME split-first pipeline, so the
+# leakage fix applies to both centralized and federated experiments at once.
 # --------------------------------------------------------------------------
 
 def partition_iid(y: np.ndarray, n_clients: int, seed: int) -> List[np.ndarray]:

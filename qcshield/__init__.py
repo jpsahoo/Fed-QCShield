@@ -1,8 +1,4 @@
-"""Fed-QCShield: quantum-enhanced federated intrusion detection.
-
-Package extracted from the original notebooks (kept untouched as provenance)
-with the defects catalogued in ``DEFECTS.md`` fixed.
-"""
+"""Fed-QCShield: quantum-enhanced federated intrusion detection."""
 
 from .config import Config, N_QUBITS, N_LAYERS, SEEDS, set_seed, get_device
 

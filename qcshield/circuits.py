@@ -3,41 +3,27 @@
 Contains the revised :func:`qcshield_layer` and the factory that builds all
 eight ``(embedding, layer)`` configurations reported in Table 3.
 
-Revised QCShield layer -- what changed and why
-----------------------------------------------
+QCShield layer -- design notes
+-------------------------------
 
-The original ``QCSchieldLayer`` (mega-cell lines 146-174) had five defects that
-Reviewers 3 (§4) and 4 (§2, §5) flagged between them; two more were latent
-crashes nobody had reported:
+* The entangling range is ``r = min(3, n-1)``, giving ``CNOT(i, (i + r) % n)``.
+  A naive ``n // 4`` breaks at small qubit counts: at ``n=3`` it is 0, making
+  the gate ``CNOT(i, i)`` (control equals target, a hard PennyLane error); at
+  ``n=4`` it is 1, making the "skip" ring identical to the adjacent ring, so
+  the two CNOT rings cancel in pairs and buy depth for nothing. ``r=min(3,n-1)``
+  implements the intended range-3 interaction topology for any valid ``n``.
+* ``Toffoli`` and ``CSWAP`` are guarded and only included when enough wires
+  are available (``n >= 3`` and ``n >= 4`` respectively), since both require
+  more wires than exist at low qubit counts.
+* ``IsingXX``/``IsingYY`` each get their own parameter slot rather than
+  reusing the angles already consumed by ``RX``/``RY`` on the same wire; the
+  weight tensor is 6 slots per (layer, wire) so every gate owns its angle.
+* The layer is fully unitary -- a coherent ``CRY`` ladder stands in for a
+  measure-then-conditionally-rotate step, since ``qml.measure``/``qml.cond``
+  would force the deferred-measurement transform, block ``adjoint``
+  differentiation, and make gate counting unstable.
 
-===============================  =========================================
-original                         revised
-===============================  =========================================
-``CNOT(i, (i + n//4) % n)``      ``CNOT(i, (i + r) % n)``, ``r=min(3,n-1)``
-``Toffoli(wires=(0,1,2))``       guarded, modulo-wrapped, ``if n >= 3``
-``CSWAP(wires=(w0,w2,w3))``      guarded, modulo-wrapped, ``if n >= 4``
-``IsingXX(weights[L,i,0])``      ``IsingXX(weights[L,i,3])`` -- own parameter
-``measure`` + ``cond``           deterministic ``CRY`` ladder
-===============================  =========================================
-
-* ``n // 4`` was the worst of them.  At ``n=3`` it is ``0``, so the gate becomes
-  ``CNOT(i, i)`` -- control equals target, a hard PennyLane error.  At ``n=4``
-  it is ``1``, so the "skip" ring is *identical* to the ring on the line above
-  and the two CNOT rings cancel in pairs, buying depth and nothing else.  The
-  replacement ``r = min(3, n-1)`` implements the range-3 interaction topology
-  the manuscript actually describes.
-* ``Toffoli`` and ``CSWAP`` on literal wire indices are out of bounds at 3
-  qubits -- the crash Reviewer 4 §5 reported.
-* ``IsingXX``/``IsingYY`` reused ``weights[L,i,0]`` and ``weights[L,i,1]``,
-  the angles already consumed by ``RX``/``RY`` on the same wire.  They were
-  never independent parameters.  The weight tensor is widened from 3 to 6
-  slots per (layer, wire) so every gate owns its angle.
-* ``qml.measure``/``qml.cond`` made the layer non-unitary, which forced the
-  deferred-measurement transform (4 wires -> 6), blocked ``adjoint``
-  differentiation, and made gate counting unstable.  The coherent ``CRY``
-  ladder is the unitary analogue of "measure wire 1, conditionally rotate".
-
-The layer now constructs for any ``n_qubits >= 2``, is fully unitary, and is
+The layer constructs for any ``n_qubits >= 2``, is fully unitary, and is
 ``diff_method="adjoint"``-differentiable -- which is the test that proves the
 mid-circuit measurement is really gone.
 

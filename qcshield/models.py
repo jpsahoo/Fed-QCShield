@@ -1,10 +1,8 @@
 """Models for Fed-QCShield: the hybrid quantum network and its classical controls.
 
-Reviewer 3 (§1) and Reviewer 4 (§3) both asked the same question -- *how much of
-the reported performance comes from the quantum layer, and how much from the
-CNN-BiLSTM backbone?*  No code path in the original could answer it: nothing
-built the backbone without the quantum layers.  This module provides four
-classical controls sharing that backbone exactly, so the quantum contribution is
+How much of the reported performance comes from the quantum layer, and how
+much from the CNN-BiLSTM backbone? This module provides four classical
+controls sharing that backbone exactly, so the quantum contribution is
 isolated rather than assumed:
 
 ======================  ==================================================
@@ -19,20 +17,15 @@ model                   what it isolates
                         shapes fixed and varies only quantum vs classical
 ======================  ==================================================
 
-Undocumented quantum batching (defect #9)
------------------------------------------
+Quantum chunking
+-----------------
 
-The original ``fc2`` emitted ``n_qubits * 3`` features and the QNode did
-``inputs.view(-1, n_qubits)``, so every sample was silently split into **3
-chunks**, pushed through the 4-qubit circuit independently, and re-concatenated
-by ``TorchLayer`` into ``3 * n_qubits = 12`` features.  It works, but the
-manuscript describes a single 4-qubit encoding of each sample.
-
-Rather than hide it, it is now the explicit ``Config.quantum_chunks`` knob.
-It **defaults to 3, reproducing the original behaviour**, so the regenerated
-numbers stay comparable with the submitted results; set it to 1 for the
-architecture the paper actually describes.  Either way the value is recorded in
-the run metadata instead of being an accident of two mismatched line numbers.
+``fc2`` emits ``n_qubits * quantum_chunks`` features; the QNode reshapes to
+``(-1, n_qubits)``, splitting each sample into ``quantum_chunks`` pieces that
+are pushed through the circuit independently and re-concatenated by
+``TorchLayer``. ``Config.quantum_chunks`` defaults to 3 (giving
+``3 * n_qubits = 12`` quantum features per sample); set it to 1 for a single
+4-qubit encoding of each sample instead.
 """
 
 from __future__ import annotations
