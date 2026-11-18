@@ -1,0 +1,29 @@
+# Fed-QCShield -- pinned environment (Reviewer 4 §8, reproducibility).
+#
+# Measured on: Linux 6.8, RTX 4080 16 GB (driver 570.86.15, CUDA 12.8),
+# Ryzen-class 32-thread CPU, 62 GB RAM.  Python 3.11.7.
+#
+# torch is the cu124 wheel:
+#   pip install torch==2.5.0 --index-url https://download.pytorch.org/whl/cu124
+#
+# NOTE: pennylane-lightning-gpu is installed and functional but is NOT used --
+# the Phase 0 benchmark showed it is ~370x slower than default.qubit+backprop
+# at 4 qubits, because the lightning devices loop over the batch instead of
+# broadcasting it.  See PROGRESS.md "Device benchmark".
+
+torch==2.5.0
+pennylane==0.40.0
+pennylane-lightning==0.40.0
+scikit-learn==1.8.0
+pandas==2.3.3
+numpy==1.26.4          # must stay <2 -- pennylane 0.40 / lightning ABI
+matplotlib==3.10.6
+seaborn==0.13.2
+torchmetrics==1.6.1
+scipy==1.16.2
+tqdm==4.66.5
+datasets==5.0.0
+kagglehub==1.0.2
+flwr==1.11.0
+flwr-datasets==0.4.0
+ray==2.10.0

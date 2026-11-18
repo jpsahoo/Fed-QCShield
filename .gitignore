@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Cached split/federated-partition arrays -- regeneratable from qcshield.data,
+# not source material, large and host-specific.
+data/
+
+# Raw per-run result dumps and scratch figure-check directories. The curated,
+# paper-relevant subset of these lives in paper_results_<timestamp>/, which
+# IS tracked -- see scripts/build_paper_results_snapshot.py.
+results_30epoch_classweighted/
+results_20epoch_classweighted/
+results_baseline_noclassweight/
+results_diagnostic_no_classweight/
+results_xiiotid_30epoch_classweighted/
+results_xiiotid_cleaned_30epoch_classweighted/
+results_xiiotid_cleaned_fed/
+results_classweight_ablation/
+results_unsw_batchsize_ablation/
+results_lr_multiplier_ablation/
+results_zeroday_ablation/
+results/
+figures_cleaned_check/
+figures_fed_xiiotid_cleaned/
+*.pdf
+!paper_results_*/figures/**/*.pdf

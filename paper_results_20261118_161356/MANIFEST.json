@@ -1,0 +1,10 @@
+{
+  "generated": "20261118_161356",
+  "covers": "Sections 6.1-6.10 (centralized, federated, ablation) of Fed-QCShield_V9.tex",
+  "excludes": [
+    "Stage A (batch size) and Stage B (LR multiplier) ablations -- UNSW-NB15-only, not included in the paper",
+    "Old buggy-pipeline X-IIoTID results (pre data-cleaning fix)",
+    "Redundant single-seed UNSW-NB15 unweighted runs superseded by the existing 5-seed results_baseline_noclassweight/ data",
+    "Zero-day ablation (not yet run)"
+  ]
+}
