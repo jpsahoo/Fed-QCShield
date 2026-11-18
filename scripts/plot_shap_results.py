@@ -44,10 +44,8 @@ def plot_summary(shap_values, feature_names, dataset_name, fig_dir: Path, top_k=
     ax.set_yticks(range(len(order)))
     ax.set_yticklabels(_escape_all([feature_names[i] for i in order][::-1]))
     ax.set_xlabel("mean |SHAP value| (averaged over classes)")
-    # Explicit smaller fontsize: at the default axes.titlesize (20pt, to
-    # match the reference style) this title ran past the right edge of the
-    # (6.5,5.3)in canvas -- previously invisible because the removed
-    # savefig.bbox="tight" silently widened the saved page to fit it.
+    # Explicit smaller fontsize: at the default axes.titlesize (20pt) this
+    # title runs past the right edge of the (6.5,5.3)in canvas.
     ax.set_title(f"QE-QCSL global feature importance -- {dataset_name}", fontsize=14)
     ax.grid(True, alpha=style.GRID_ALPHA, axis="x")
     ax.set_axisbelow(True)

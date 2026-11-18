@@ -7,8 +7,8 @@ get caught as *some* attack class (the IDS still raises an alarm, even if
 mislabeled) vs. missed as Normal (the failure mode that actually matters for
 a genuinely novel attack the system was never trained to recognize).
 
-Kept as its own script (not folded into run_ablation_suite.py) since it
-needs a custom train/val split rather than a simple config-knob change.
+Kept as its own script (not folded into run_classweight_ablation.py) since
+it needs a custom train/val split rather than a simple config-knob change.
 """
 import json
 import logging

@@ -1,10 +1,9 @@
 """Curate a timestamped snapshot of exactly the results that back the paper
 (through the Ablation Analysis section): JSON result files, CSV summaries,
 and the PDF figures actually embedded in Fed-QCShield_V9.tex. Excludes
-scratch/superseded runs (old buggy-pipeline X-IIoTID data, the UNSW-only
-batch-size/LR-multiplier ablation stages that were kept out of the paper,
-and the redundant single-seed UNSW unweighted runs superseded by the
-existing 5-seed results_baseline_noclassweight/ data).
+scratch/superseded runs (old buggy-pipeline X-IIoTID data, and the redundant
+single-seed UNSW unweighted runs superseded by the existing 5-seed
+results_baseline_noclassweight/ data).
 
 Read-only with respect to any in-progress run: only copies already-written
 files, never touches results_classweight_ablation/ or any other directory
@@ -107,8 +106,6 @@ def main():
         "generated": TIMESTAMP,
         "covers": "Sections 6.1-6.10 (centralized, federated, ablation) of Fed-QCShield_V9.tex",
         "excludes": [
-            "Stage A (batch size) and Stage B (LR multiplier) ablations -- "
-            "UNSW-NB15-only, not included in the paper",
             "Old buggy-pipeline X-IIoTID results (pre data-cleaning fix)",
             "Redundant single-seed UNSW-NB15 unweighted runs superseded by "
             "the existing 5-seed results_baseline_noclassweight/ data",

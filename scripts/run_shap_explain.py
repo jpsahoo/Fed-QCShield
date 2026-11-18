@@ -1,21 +1,13 @@
 #!/usr/bin/env python
-"""SHAP explainability for QE-QCSL, full scale (2026-09-10).
+"""Per-sample SHAP explainability for QE-QCSL, full scale.
 
-Addresses the explainability item Reviewer 3 (Comment 5) raised and this
-project's own Future Work list: per-sample feature attribution for the
-headline quantum configuration, not just circuit-structure interpretability.
-
-Unlike the earlier Colab smoke test (colab/_extracted_test.py, 8K-row
-subsample, 1 training epoch, 20 explained samples -- built only to prove the
-code runs end to end), this trains QE-QCSL at the same recipe as every other
-headline result (full dataset, seed 0, 30 epochs, class-weighted loss,
-AdamW with the quantum parameter group) and explains a class-stratified
-sample of the test set, not a handful of random rows.
+Trains QE-QCSL at the same recipe as every other headline result (full
+dataset, seed 0, 30 epochs, class-weighted loss, AdamW with the quantum
+parameter group) and explains a class-stratified sample of the test set.
 
 KernelExplainer cost is roughly linear in background_size * nsamples per
-explained instance; the Colab measurement was ~4-4.7s/instance at
-background=50, nsamples=100. At background=100, nsamples=200 (~4x), budget
-roughly 200 instances * ~18s ~= an hour per dataset.
+explained instance. At background=100, nsamples=200, budget roughly 200
+instances * ~18s ~= an hour per dataset.
 
 Usage:
     PYTHONPATH=. ./.venv/bin/python scripts/run_shap_explain.py --dataset Edge-IIoTSet
