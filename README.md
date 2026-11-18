@@ -10,7 +10,7 @@ This repository accompanies the manuscript *"Fed-QCShield: A Federated
 Learning Framework for Quantum-enhanced IDS"* (`Fed-QCShield_V9.tex` in the
 companion `Latex_V9` repository).
 
-## Honest headline result
+## Headline result
 
 Under a leakage-free, class-weighted, 5-seed statistical comparison, the
 proposed quantum layer (QE-QCSL) does **not** demonstrate a detection-accuracy
@@ -20,42 +20,7 @@ leakage-free, federated evaluation framework itself -- not a claimed quantum
 accuracy edge. See the `paper_results_<timestamp>/` snapshot described below,
 and the manuscript's Table 3, for the full, unedited numbers.
 
-## X-IIoTID data-cleaning fix (important for reproducing earlier numbers)
 
-An earlier version of this repository's results for X-IIoTID were affected by
-a data-cleaning defect, now fixed in `qcshield/data.py`
-(`_is_numeric_with_placeholder`): roughly 40 of X-IIoTID's raw columns are
-genuinely numeric (byte counts, packet counts, durations, CPU/IO timing
-stats) but pandas reads them as `object` dtype because the raw CSV uses the
-literal string `"-"` as a "not applicable for this flow direction" token
-mixed in with numeric values. The categorical-detection step used a
-dtype-only check, so these ~40 numeric columns were silently treated as
-nominal categories and ordinal-encoded -- destroying their numeric ordering
-and mapping any value unseen in the training split to an arbitrary "unseen"
-sentinel. UNSW-NB15 and Edge-IIoTSet's raw data contain no such placeholder
-token in their numeric columns, so only X-IIoTID was affected.
-
-**Symptom**: a severe, reproducible train/validation generalization gap
-specific to X-IIoTID (train loss collapsing toward 0.02-0.03 while validation
-loss oscillated between 0.5 and 1.8, a 50+ fold gap) that did not appear on
-UNSW-NB15 or Edge-IIoTSet under the identical training recipe.
-
-**Fix**: object-dtype columns are now checked (on the training split only, so
-the decision stays leak-free) for whether their non-placeholder values are
->=95% numeric-parseable; if so, the `"-"` token is coerced to `NaN` and the
-column is routed through the existing numeric (`to_numeric` + `fillna(0.0)`)
-path instead of the categorical encoder. X-IIoTID now resolves to 40 retained
-features (down from 50, since the correlation filter can finally see genuine
-numeric correlations) with identical train/val/test split sizes to before.
-UNSW-NB15 and Edge-IIoTSet are provably unaffected (re-verified byte-for-byte
-identical split sizes and feature counts after the fix).
-
-**Effect on results**: every X-IIoTID number in the manuscript was
-regenerated after this fix. The train/validation gap disappears (now tracks
-closely, matching the healthy pattern already seen on the other two
-datasets), and QE-QCSL's standing relative to the classical control changes
-substantially -- see `RESULTS.md`-equivalent numbers in
-`paper_results_<timestamp>/centralized/summary_X-IIoTID.csv`.
 
 ## Repository layout
 
@@ -180,11 +145,6 @@ In addition to the main 8-configuration embedding x entangling-ansatz
 architecture grid (Table 3), a low-cost ablation suite checks whether three
 fixed design choices are doing real work:
 
-- **Batch size** (128 / 256 / 512, QCShieldLayer only, UNSW-NB15 only): no
-  batch size beats 512 by a wide margin at this seed depth.
-- **Quantum learning-rate multiplier** (1x / 2x / 5x / 10x, QCShieldLayer
-  only, UNSW-NB15 only): no multiplier is clearly optimal; the fixed 5x
-  choice is not doing decisive work either way.
 - **Class-weighted vs. unweighted cross-entropy loss** (QCShieldLayer only,
   **all three datasets**, 5 seeds each for UNSW-NB15/Edge-IIoTSet, 5 seeds
   for X-IIoTID after `run_xiiotid_unweighted_remaining_seeds.py`): aggregate
@@ -200,13 +160,6 @@ fixed design choices are doing real work:
   throughout this work -- accuracy and a single macro-F1 average can hide a
   model that has quietly stopped detecting entire attack categories.
 
-The batch-size and LR-multiplier ablations are UNSW-NB15-only and kept out of
-the manuscript (not enough value to justify extending them to Edge-IIoTSet,
-whose QCShieldLayer runs take ~10-12x longer than the other two datasets);
-the class-weighting ablation is in the manuscript (Table 12) since it spans
-all three datasets. A zero-day ablation (X-IIoTID, crypto-ransomware held
-out of train/val entirely) is scripted (`run_zeroday_ablation.py`) but not
-yet run.
 
 ## Results snapshot
 
