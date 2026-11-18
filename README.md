@@ -196,9 +196,7 @@ PYTHONPATH=. python tests/test_circuits.py   # quantum circuit correctness and g
 Every result JSON records its full configuration (dataset, model, embedding,
 layer, seed, epoch count, class-weighting flag, measured training time, peak
 VRAM) alongside its metrics, so any reported number can be traced back to the
-exact run that produced it. Every RNG (`random`, NumPy, Torch CPU+CUDA) is
-seeded via `qcshield.config.set_seed()`.
-
+exact run that produced it. 
 ## Citation
 
 If you use this code, please cite the accompanying manuscript (citation
