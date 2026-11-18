@@ -7,8 +7,7 @@ federated learning (Flower) on three network-traffic intrusion-detection
 datasets: **UNSW-NB15**, **Edge-IIoTSet**, and **X-IIoTID**.
 
 This repository accompanies the manuscript *"Fed-QCShield: A Federated
-Learning Framework for Quantum-enhanced IDS"* (`Fed-QCShield_V9.tex` in the
-companion `Latex_V9` repository).
+Learning Framework for Quantum-enhanced IDS"*.
 
 ## Headline result
 
