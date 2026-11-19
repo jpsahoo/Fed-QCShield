@@ -52,7 +52,7 @@ requirements.txt    # pinned dependency versions
 |---|---|---|---|
 | UNSW-NB15 | 10 | 32 | 107,578 / 15,369 / 30,737 |
 | Edge-IIoTSet | 15 | 38 | 1,335,671 / 190,811 / 381,621 |
-| X-IIoTID | 10 (top-10 by frequency) | 40 (post data-cleaning fix) | 490,801 / 70,115 / 140,229 |
+| X-IIoTID | 10  | 40 (post data-cleaning fix) | 490,801 / 70,115 / 140,229 |
 
 All three datasets are loaded through the **identical split-first pipeline**
 (`qcshield/data.py`): deduplicate on feature columns -> stratified
