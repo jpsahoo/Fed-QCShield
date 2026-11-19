@@ -36,11 +36,7 @@ scripts/
   run_ablation_suite.py                # batch-size + LR-multiplier (UNSW-NB15 only) and
                                         # class-weighting (all 3 datasets) ablations, QCSL only
   run_xiiotid_unweighted_remaining_seeds.py  # fills X-IIoTID's unweighted ablation to 5 seeds
-  run_zeroday_ablation.py              # X-IIoTID zero-day holdout (crypto-ransomware excluded
-                                        # from train/val, kept in test) -- not yet run
-  build_paper_results_snapshot.py      # curates a timestamped, paper-relevant results snapshot
-                                        # (see "Results snapshot" below)
-  run_shap_explain.py, plot_shap_results.py  # per-sample SHAP explainability pipeline
+   run_shap_explain.py, plot_shap_results.py  # per-sample SHAP explainability pipeline
   run_xiiotid_grid.sh                  # 5-way concurrent grid-launch pattern on one GPU
 tests/              # AST-based and numerical regression tests
 requirements.txt    # pinned dependency versions
